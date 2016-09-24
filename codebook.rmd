@@ -63,6 +63,7 @@ You should create one R script called run_analysis.R that does the following.
 
 5.From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
 
+Here are the steps that were taken to produce the tidy data set.  
 
 Load Wickham's plyr and dplyr packages...
 ```{}
@@ -332,12 +333,16 @@ return(sorted_tidy)
 ```
 }
 ```
+
+Here is a description of what the tidy dataset contains...
+
 The tidy data set will contain 68 columns:
 
-subject - the ID of the subject wearing the device
-activity - the specific activity the subject was peforming when the measurements were recorded. There are 6 distinct activities (WALKING, WALKING_UPSTAIRS, WALKING_DOWNSTAIRS, SITTING, STANDING, LAYING).
+col1: subject - the ID of the subject wearing the device
+col2" activity - the specific activity the subject was peforming when the measurements were recorded. There are 6 distinct activities (WALKING, WALKING_UPSTAIRS, WALKING_DOWNSTAIRS, SITTING, STANDING, LAYING).
 
-for each subject and activity, the data will contain 66 variables representing a numeric mean or std deviation for acc and gyro movement.  They are:
+for each subject and activity, the data will contain 66 variables representing a numeric mean or std deviation for acc and gyro recorded movements.  "-X", "-Y", "-Z" suffixes denote the respective axial signal X, Y, or Z.  Cols 3-68 are:
+
 "3" "timeBodyAccelerometerMean-X"
 "4" "timeBodyAccelerometerMean-Y"
 "5" "timeBodyAccelerometerMean-Z"
