@@ -25,7 +25,7 @@ library(plyr)
 library(dplyr)
 ```
 
-Declare a function called runAnalysis.  After loading the run_analysis.R source file, you can run this function to build the build, reshape, and tidy up the data.  The function will return a tidy data set.
+Declare a function called runAnalysis().  After sourcing the run_analysis.R file, you can run this function to build, reshape, and tidy up the data.  The function will return a tidy data set.
 ```{}
 runAnalysis<-function(){
 #returns a tidy dataset
