@@ -40,7 +40,7 @@ runAnalysis<-function(){
 #    ie. write.csv(tidy, file="tidydata.csv", row.names=FALSE)
 ```
 
-Read the activities...
+Read the activities...6 distinct activities are expected
 ```{}
 activities<-read.table(file="activity_labels.txt")
 > dim(activities)
@@ -56,7 +56,7 @@ activities<-read.table(file="activity_labels.txt")
 > 
 ```
 
-Make tidy...6 distinct activities are expected
+Make tidy with meaningful var names
 ```{}
 activities<-plyr::rename(activities, c("V1"="activity_id","V2"="activity"))
 > head(activities)
