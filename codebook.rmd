@@ -1,11 +1,11 @@
 ---
-title: "ML Course Project"
+title: "Getting and Cleaning Data Course Project"
 author: "Bill Cohee"
-date: "April 16, 2016"
+date: "September 24, 2016"
 output: html_document
 ---
 The assignment:
-You should create one R script called run_analysis.R (this file) that does the following.
+You should create one R script called run_analysis.R that does the following.
 
 1.Merges the training and the test sets to create one data set.
 2.Extracts only the measurements on the mean and standard deviation for each measurement.
