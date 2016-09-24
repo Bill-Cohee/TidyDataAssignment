@@ -1,0 +1,285 @@
+---
+title: "ML Course Project"
+author: "Bill Cohee"
+date: "April 16, 2016"
+output: html_document
+---
+The assignment:
+You should create one R script called run_analysis.R (this file) that does the following.
+
+1.Merges the training and the test sets to create one data set.
+2.Extracts only the measurements on the mean and standard deviation for each measurement.
+3.Uses descriptive activity names to name the activities in the data set
+4.Appropriately labels the data set with descriptive variable names.
+5.From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
+
+
+Load Wickham's plyr and dplyr packages...
+```{}
+
+library(plyr)
+library(dplyr)
+```
+
+Declare a function called runAnalysis.  After loading the run_analysis.R source file, you can run this function to build the build, reshape, and tidy up the data.  The function will return a tidy data set.
+```{}
+runAnalysis<-function(){
+#returns a tidy dataset
+#usage: 
+#1. set your wd to the location of your downloaded data
+#  ie. setwd("./rwd/wearabledata")
+#2. load this source
+#   ie. source("run_analysis.R")
+#3. run the analysis
+#    ie. tidy<-runAnalysis()
+#4. export the tidy data
+#    ie. write.csv(tidy, file="tidydata.csv", row.names=FALSE)
+```
+
+Read the activities...
+```{}
+activities<-read.table(file="activity_labels.txt")
+> dim(activities)
+[1] 6 2
+> head(activities)
+  V1                 V2
+1  1            WALKING
+2  2   WALKING_UPSTAIRS
+3  3 WALKING_DOWNSTAIRS
+4  4            SITTING
+5  5           STANDING
+6  6             LAYING
+> 
+```
+
+Make tidy...6 distinct activities are expected
+```{}
+activities<-plyr::rename(activities, c("V1"="activity_id","V2"="activity"))
+> head(activities)
+  activity_id           activity
+1           1            WALKING
+2           2   WALKING_UPSTAIRS
+3           3 WALKING_DOWNSTAIRS
+4           4            SITTING
+5           5           STANDING
+6           6             LAYING
+> 
+```
+
+Read the features and make the data tidy...
+```{}
+features<-read.table(file="features.txt")
+#make tidy...561 distinct features are expected
+features<-plyr::rename(features, c("V1"="feature_id","V2"="feature"))
+> head(features)
+  feature_id           feature
+1          1 tBodyAcc-mean()-X
+2          2 tBodyAcc-mean()-Y
+3          3 tBodyAcc-mean()-Z
+4          4  tBodyAcc-std()-X
+5          5  tBodyAcc-std()-Y
+6          6  tBodyAcc-std()-Z
+```
+
+Flag the features that are means or std deviations using grep and store TRUE if the measure is a mean or std deviation.  We will use this to filter the measures we want for the tidy data set.
+```{}
+features$mean_or_std<-FALSE
+mean_or_std<-grep("-mean\\(|-std\\(", features$feature)
+features[mean_or_std,"mean_or_std"]<-TRUE
+> head(features)
+  feature_id           feature mean_or_std
+1          1 tBodyAcc-mean()-X        TRUE
+2          2 tBodyAcc-mean()-Y        TRUE
+3          3 tBodyAcc-mean()-Z        TRUE
+4          4  tBodyAcc-std()-X        TRUE
+5          5  tBodyAcc-std()-Y        TRUE
+6          6  tBodyAcc-std()-Z        TRUE
+> 
+```
+
+Read subject data and make tidy...
+```{}
+subject_train<-read.table(file="./train/subject_train.txt")
+subject_train<-plyr::rename(subject_train, c("V1"="subject_id"))
+head(subject_train)
+  subject_id
+1          1
+2          1
+3          1
+4          1
+5          1
+6          1
+```
+
+Read subject testing and label var as 'subject_id'
+```{}
+subject_test<-read.table(file="./test/subject_test.txt")
+subject_test<-plyr::rename(subject_test, c("V1"="subject_id"))
+> head(subject_test)
+  subject_id
+1          2
+2          2
+3          2
+4          2
+5          2
+6          2
+> 
+```
+
+Read training data & assign var names
+```{}
+x_train<-read.table("./train/X_train.txt", header=FALSE)
+colnames(x_train)<-features$feature
+y_train<-read.table("./train/Y_train.txt", header=FALSE)
+y_train<-plyr::rename(y_train, c("V1"="activity_id"))
+> dim(x_train)
+[1] 7352  561
+> dim(y_train)
+[1] 7352    1
+> 
+```
+Read testing data & assign var names
+```{}
+x_test<-read.table("./test/X_test.txt", header=FALSE)
+colnames(x_test)<-features$feature
+y_test<-read.table("./test/y_test.txt", header=FALSE)
+y_test<-plyr::rename(y_test, c("V1"="activity_id"))
+> dim(x_test)
+[1] 2947  561
+> dim(y_test)
+[1] 2947    1
+> 
+```
+
+Now combine training data into 1 dataset
+```{}
+training_data<-cbind(subject_train, y_train, x_train)
+```
+Next,combine testing data into 1 dataset
+```{}
+testing_data<-cbind(subject_test, y_test, x_test)
+> dim(training_data)
+[1] 7352  563
+> dim(testing_data)
+[1] 2947  563
+> 
+```
+Now we recombine training and testing datasets into 1 dataset
+```{}
+combined_data<-rbind(training_data, testing_data)
+> dim(combined_data)
+[1] 10299   563
+> 
+```
+Use join() to join combined data with activities on activity_id.
+This will give the activities descriptive names. The joined data should have the same
+dimensions with 1 additional column with the activity ie, SITTING
+```{}
+joined_data<-plyr::join(combined_data, activities, by="activity_id")
+> dim(joined_data)
+[1] 10299   564
+```
+
+subset joined data to only include measures that are mean or std deviations. Use the mean_or_std column we created using grep earlier to filter.
+```{}
+measures<-filter(features, mean_or_std==TRUE)
+master_data<-joined_data[,c('subject_id','activity',as.character(measures$feature))]
+> measures
+   feature_id                     feature mean_or_std
+1           1           tBodyAcc-mean()-X        TRUE
+2           2           tBodyAcc-mean()-Y        TRUE
+3           3           tBodyAcc-mean()-Z        TRUE
+4           4            tBodyAcc-std()-X        TRUE
+5           5            tBodyAcc-std()-Y        TRUE
+6           6            tBodyAcc-std()-Z        TRUE
+7          41        tGravityAcc-mean()-X        TRUE
+8          42        tGravityAcc-mean()-Y        TRUE
+9          43        tGravityAcc-mean()-Z        TRUE
+10         44         tGravityAcc-std()-X        TRUE
+11         45         tGravityAcc-std()-Y        TRUE
+12         46         tGravityAcc-std()-Z        TRUE
+13         81       tBodyAccJerk-mean()-X        TRUE
+14         82       tBodyAccJerk-mean()-Y        TRUE
+15         83       tBodyAccJerk-mean()-Z        TRUE
+16         84        tBodyAccJerk-std()-X        TRUE
+17         85        tBodyAccJerk-std()-Y        TRUE
+18         86        tBodyAccJerk-std()-Z        TRUE
+19        121          tBodyGyro-mean()-X        TRUE
+20        122          tBodyGyro-mean()-Y        TRUE
+21        123          tBodyGyro-mean()-Z        TRUE
+22        124           tBodyGyro-std()-X        TRUE
+23        125           tBodyGyro-std()-Y        TRUE
+24        126           tBodyGyro-std()-Z        TRUE
+25        161      tBodyGyroJerk-mean()-X        TRUE
+26        162      tBodyGyroJerk-mean()-Y        TRUE
+27        163      tBodyGyroJerk-mean()-Z        TRUE
+28        164       tBodyGyroJerk-std()-X        TRUE
+29        165       tBodyGyroJerk-std()-Y        TRUE
+30        166       tBodyGyroJerk-std()-Z        TRUE
+31        201          tBodyAccMag-mean()        TRUE
+32        202           tBodyAccMag-std()        TRUE
+33        214       tGravityAccMag-mean()        TRUE
+34        215        tGravityAccMag-std()        TRUE
+35        227      tBodyAccJerkMag-mean()        TRUE
+36        228       tBodyAccJerkMag-std()        TRUE
+37        240         tBodyGyroMag-mean()        TRUE
+38        241          tBodyGyroMag-std()        TRUE
+39        253     tBodyGyroJerkMag-mean()        TRUE
+40        254      tBodyGyroJerkMag-std()        TRUE
+41        266           fBodyAcc-mean()-X        TRUE
+42        267           fBodyAcc-mean()-Y        TRUE
+43        268           fBodyAcc-mean()-Z        TRUE
+44        269            fBodyAcc-std()-X        TRUE
+45        270            fBodyAcc-std()-Y        TRUE
+46        271            fBodyAcc-std()-Z        TRUE
+47        345       fBodyAccJerk-mean()-X        TRUE
+48        346       fBodyAccJerk-mean()-Y        TRUE
+49        347       fBodyAccJerk-mean()-Z        TRUE
+50        348        fBodyAccJerk-std()-X        TRUE
+51        349        fBodyAccJerk-std()-Y        TRUE
+52        350        fBodyAccJerk-std()-Z        TRUE
+53        424          fBodyGyro-mean()-X        TRUE
+54        425          fBodyGyro-mean()-Y        TRUE
+55        426          fBodyGyro-mean()-Z        TRUE
+56        427           fBodyGyro-std()-X        TRUE
+57        428           fBodyGyro-std()-Y        TRUE
+58        429           fBodyGyro-std()-Z        TRUE
+59        503          fBodyAccMag-mean()        TRUE
+60        504           fBodyAccMag-std()        TRUE
+61        516  fBodyBodyAccJerkMag-mean()        TRUE
+62        517   fBodyBodyAccJerkMag-std()        TRUE
+63        529     fBodyBodyGyroMag-mean()        TRUE
+64        530      fBodyBodyGyroMag-std()        TRUE
+65        542 fBodyBodyGyroJerkMag-mean()        TRUE
+66        543  fBodyBodyGyroJerkMag-std()        TRUE
+> dim(master_data)
+[1] 10299    68
+> 
+```
+Now, make a tidy dataset with descriptive var names that are intuitive
+```{}
+tidy<-aggregate(. ~subject_id + activity, master_data, mean)
+sorted_tidy<-arrange(tidy, subject_id, activity)
+#give features more descriptive, intuitive names
+measures$descriptive<-measures$feature
+measures$descriptive<-gsub("^t", "time", measures$descriptive)
+measures$descriptive<-gsub("^f", "freq", measures$descriptive)
+measures$descriptive<-gsub("Acc", "Accelerometer", measures$descriptive)
+measures$descriptive<-gsub("Gyro", "Gyroscope", measures$descriptive)
+measures$descriptive<-gsub("Mag", "Magnitude", measures$descriptive)
+measures$descriptive<-gsub("BodyBody", "Body", measures$descriptive)
+measures$descriptive<-gsub("-mean\\(\\)", "Mean", measures$descriptive)
+measures$descriptive<-gsub("-std\\(\\)", "SDev", measures$descriptive)
+descriptives<-c('subject','activity', as.character(measures$descriptive))
+```
+Apply the descriptive names to the dataset to make it more tidy...
+```{}
+colnames(sorted_tidy)<-descriptives
+```
+Return the tidy dataset...
+```{}
+return(sorted_tidy)
+```
+}
+```
+
